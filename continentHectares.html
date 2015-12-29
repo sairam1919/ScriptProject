@@ -1,0 +1,139 @@
+<html>
+<head>
+<title>Continent Heactars</title>
+<script src="./include/lib/js/d3.min.js"></script>
+<script src="./include/lib/js/tip.js"></script>
+<script src="./include/lib/js/bootstrap.js"></script>
+<script src="./include/lib/js/jquery-1.11.3.min.js"></script>
+
+<link rel="stylesheet" type="text/css" href="./include/lib/css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="./include/css/style.css">
+</head>
+<style>
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+.x.axis path {
+  display: none;
+}
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+</style>
+
+<body>
+
+  <div class="container-fluid" id="page-content-wrapper">
+
+  <div class="container text-center">
+
+  </div>
+
+</div>
+<div class="container text-center well" id="main">
+  <h2>Continent-Wise : Arable land (hectares)</h2>
+</div>
+
+
+</body>
+
+<script>
+
+var margin = {top: 20, right: 80, bottom: 30, left: 100},
+    width = 1060 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+
+    var x = d3.scale.linear()
+                .range([0, width]);
+                var y = d3.scale.linear()
+                .range([height, 0]);
+                var color = d3.scale.category10();
+                var xAxis = d3.svg.axis()
+                .scale(x)
+                .orient("bottom");
+                var yAxis = d3.svg.axis()
+                .scale(y)
+                .innerTickSize(-width)
+                .orient("left");
+                var line = d3.svg.line()
+                .interpolate("basis")
+                .x(function(d) { return x(d.year); })
+                .y(function(d) { return y(d.continent); });
+                var svg = d3.select("#main").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.json("./Feed/continentHectares.json", function(error, data) {
+  if (error) throw error;
+              x.domain([d3.min(data, function(d){ return d.year; }), d3.max(data, function(d){ return d.year; })]);
+              color.domain(d3.keys(data[0]).filter(function(key) { return key !== "year"; }));
+              var cities = color.domain().map(function(name) {
+                return {
+                  name: name,
+                  values: data.map(function(d) {
+                    return {year: d.year, continent: +d[name]};
+                  })
+                };
+              });
+              y.domain([
+                d3.min(cities, function(c) { return d3.min(c.values, function(v) { return 0; }); }),
+                d3.max(cities, function(c) { return d3.max(c.values, function(v) { return v.continent; }); })
+              ]);
+
+              svg.append("g")
+              .attr("class", "x axis")
+              .attr("transform", "translate(0," + height + ")")
+              .call(xAxis);
+
+              svg.append("g")
+              .attr("class", "y axis")
+              .call(yAxis)
+              .append("text")
+              .attr("transform", "rotate(-90)")
+              .attr("y", 6)
+              .attr("dy", ".71em")
+              .style("text-anchor", "end")
+              .text("Hectares");
+
+              var city = svg.selectAll(".city")
+              .data(cities)
+              .enter().append("g")
+              .attr("class", "city");
+              city.append("path")
+              .attr("class", "line")
+              .attr("d", function(d) { return line(d.values); })
+              .attr("data-legend",function(d) { return d.name})
+              .style("stroke", function(d) { return color(d.name); });
+
+              city.append("text")
+              .datum(function(d) { return {name: d.name, value: d.values[d.values.length - 1]}; })
+              .attr("transform", function(d) { return "translate(" + x(d.value.year) + "," + y(d.value.continent) + ")"; })
+              .attr("x", 3)
+              .attr("dy", ".35em")
+              .style("text-transform","capitalize")
+              .style("padding-bottom","2cm")
+              .text(function(d) { return d.name; });
+              legend = svg.append("g")
+              .attr("class","legend")
+              .attr("transform","translate(50,30)")
+              .style("font-size","12px")
+              .style("text-transform","capitalize")
+              .call(d3.legend)
+              setTimeout(function() {
+                legend
+                .style("font-size","20px")
+                .attr("data-style-padding",10)
+                .call(d3.legend)
+              },1000)
+            });
+
+</script>
+
+</html>
